@@ -18,10 +18,7 @@ class ComponentBase //: public GameObject
 	//*******************************************
 protected:
 
-
-
 	GameObject* mpOwner; // GameObjectインスタンスのアドレス保存
-
 
 
 	//*******************************************
@@ -32,11 +29,12 @@ public:
 	~ComponentBase();
 
 	// GameObjectインスタンスのアドレスを保存する
-	void SetOwner(GameObject);
+	void SetOwner(GameObject*);
 
 	// オーバーライドで内容を上書きする
 	virtual void Init();
 	virtual void Update();
+	virtual void Draw();
 	virtual void Release();
 
 };

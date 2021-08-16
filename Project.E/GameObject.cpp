@@ -6,13 +6,21 @@
 #include "ToonMap.h"
 #include "input.h"
 #include "Light.h"
+#include "ComponentBase.h"
+#include "ColliderComponent.h"
+ 
 
-// 8/4更新 
+//*************************************
+// マクロ定義
+//*************************************
+#define COLLIDER_NUM 3
+
 
 //*************************************
 // グローバル変数
 //*************************************
 GameObject* gpGameObject[MAX_GAMEOBJECT];
+ColliderComponent* gpColliderComponent[COLLIDER_NUM];
 
 
 //*************************************
@@ -1079,6 +1087,23 @@ void GameObjectInit(void) {
 	// パラメーター設定
 	GameObjectSetParameter();
 
+
+	// コンポーネント追加
+	// ゴースト
+	gpColliderComponent[ENEMY_01] = new ColliderComponent;
+	gpColliderComponent[ENEMY_01]->SetOwner(gpGameObject[ENEMY_01]);
+	gpColliderComponent[ENEMY_01]->InitSphere(6.0f);
+	// 木
+	gpColliderComponent[TREE_01] = new ColliderComponent;
+	gpColliderComponent[TREE_01]->SetOwner(gpGameObject[TREE_01]);
+	XMFLOAT3 length = { 5.0f, 50.0f, 5.0f };
+	gpColliderComponent[TREE_01]->InitAabb(length);
+	// 宝箱
+	gpColliderComponent[TREASURECHEST] = new ColliderComponent;
+	gpColliderComponent[TREASURECHEST]->SetOwner(gpGameObject[TREASURECHEST]);
+	length = { 10.0f, 20.0f, 8.0f };
+	gpColliderComponent[TREASURECHEST]->InitAabb(length);
+
 }
 
 // 更新
@@ -1101,6 +1126,12 @@ void GameObjectUpdate(void) {
 
 	gpGameObject[ENEMY_01]->PositionSet(pos.x, pos.y, pos.z);
 
+
+	// コンポーネント
+	gpColliderComponent[ENEMY_01]->Update(gpColliderComponent[TREE_01]);
+	gpColliderComponent[ENEMY_01]->Update(gpColliderComponent[TREASURECHEST]); // 2個めが反応しない....
+	gpColliderComponent[ENEMY_01]->UpdateBackup();
+
 }
 
 // 描画
@@ -1122,6 +1153,13 @@ void GameObjectDraw(void) {
 	for (int i = 0; i < MAX_GAMEOBJECT; i++) {
 		gpGameObject[i]->Draw();
 	}
+
+
+	// コンポーネント
+	for (int i = 0; i < COLLIDER_NUM; i++) {
+		gpColliderComponent[i]->Draw();
+	}
+
 }
 
 // 解放
@@ -1130,6 +1168,13 @@ void GameObjectRelease(void) {
 	for (int i = 0; i < MAX_GAMEOBJECT; i++) {
 		delete gpGameObject[i];
 	}
+
+
+	// コンポーネント
+	for (int i = 0; i < COLLIDER_NUM; i++) {
+		delete gpColliderComponent[i];
+	}
+
 }
 
 // パラメーター設定
@@ -1141,9 +1186,14 @@ void GameObjectSetParameter(void) {
 	gpGameObject[ENEMY_01]->ScaleSet(0.1f, 0.1f, 0.1f);
 
 	// 木01
-	gpGameObject[TREE_01]->PositionSet(20.0f, 0.0f, 10.0f);
+	gpGameObject[TREE_01]->PositionSet(60.0f, 0.0f, 20.0f);
 	gpGameObject[TREE_01]->RotationSet(0, 0, 0);
 	gpGameObject[TREE_01]->ScaleSet(5.0f, 5.0f, 5.0f);
+
+	// 宝箱
+	gpGameObject[TREASURECHEST]->PositionSet(50.0f, 0, 80.0f);
+	gpGameObject[TREASURECHEST]->RotationSet(0, 0, 0);
+	gpGameObject[TREASURECHEST]->ScaleSet(1.0f, 1.0f, 1.0f);
 
 	// マップ01
 	gpGameObject[MAP_01]->PositionSet(0, 0, 0);
@@ -1155,14 +1205,9 @@ void GameObjectSetParameter(void) {
 	gpGameObject[SKY_01]->RotationSet(0, 0, 0);
 	gpGameObject[SKY_01]->ScaleSet(1.0f, 1.0f, 1.0f);
 
-	// 宝箱
-	gpGameObject[TREASURECHEST]->PositionSet(50.0f, 0, 50.0f);
-	gpGameObject[TREASURECHEST]->RotationSet(0, 0, 0);
-	gpGameObject[TREASURECHEST]->ScaleSet(1.0f, 1.0f, 1.0f);
-
 	// 箱
-	gpGameObject[BOX_01]->PositionSet(-20.0f, 15.0f, -20.0f);
+	gpGameObject[BOX_01]->PositionSet(-40.0f, 15.0f, -40.0f);
 	gpGameObject[BOX_01]->RotationSet(0, 0, 0);
-	gpGameObject[BOX_01]->ScaleSet(1.0f, 1.0f, 1.0f);
+	gpGameObject[BOX_01]->ScaleSet(0.1f, 0.1f, 0.1f);
 
 }

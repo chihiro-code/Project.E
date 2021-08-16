@@ -12,12 +12,12 @@ using namespace DirectX;
 // GameObjectで管理するモデルのIDリストを定義する
 //***********************************************
 enum GAMEOBJECT_ID {
-	ENEMY_01,   // ゴースト
-	TREE_01,    // 木01
-	MAP_01,     // マップ01
-	SKY_01,     // 空01
+	ENEMY_01,      // ゴースト
+	TREE_01,       // 木01
 	TREASURECHEST, // 宝箱
-	BOX_01,     // 箱
+	MAP_01,        // マップ01
+	SKY_01,        // 空01
+	BOX_01,        // 箱
 
 	MAX_GAMEOBJECT
 };
@@ -30,9 +30,9 @@ enum GAMEOBJECT_ID {
 static const char* gpFbxModelFileNames[] = {
 	"assets/model/Ghost02.fbx",
 	"assets/model/tree_01.fbx",
+	"assets/model/TreasureChest.fbx",
 	"assets/model/field_01.fbx",
 	"assets/model/sky_01.fbx",
-	"assets/model/TreasureChest.fbx",
 	"assets/model/box_01.fbx",
 };
 
@@ -40,9 +40,9 @@ static const char* gpFbxModelFileNames[] = {
 static const char* gpFbxTextureFileNames[] = {
 	"assets/model/Ghost02.png",
 	"assets/model/tree_01.png",
+	"assets/model/TreasureChest.png",
 	"assets/model/field_01.png",
 	"assets/model/sky_01.png",
-	"assets/model/TreasureChest.png",
 	"assets/model/box_01.png",
 };
 
@@ -241,14 +241,14 @@ public:
 	
 
 
-private:
 	//---------------------------------
 	// モデル読み込みで使用↓
 	//---------------------------------
-
+public:
 	// 初期化
 	void FbxInit(char*, char*);
 
+private:
 	// シェーダー初期化をモーションありかなしで分岐させる
 	void FbxShaderInitChoice(Mesh*);
 

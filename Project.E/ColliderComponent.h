@@ -12,7 +12,6 @@ using namespace DirectX;
 enum COLLIDER_TYPE {
 	COL_TYPE_SPHERE, // 球
 	COL_TYPE_AABB,   // 直方体
-	COL_TYPE_POINT,  // 点
 
 	MAX_COL_TYPE
 };
@@ -23,20 +22,16 @@ enum COLLIDER_TYPE {
 //***********************************************
 // FBXモデル　メッシュ
 static const char* gpFbxColliderModelFileNames[] = {
-	"assets/model/Ghost02.fbx",
-	"assets/model/tree_01.fbx",
-	"assets/model/field_01.fbx",
-	"assets/model/sky_01.fbx",
-	"assets/model/TreasureChest.fbx",
+	"assets/model/sphere_01.fbx",
+	"assets/model/box_02.fbx",
+	
 };
 
 // FBXモデル　テクスチャ
 static const char* gpFbxColliderTextureFileNames[] = {
-	"assets/model/Ghost02.png",
-	"assets/model/tree_01.png",
-	"assets/model/field_01.png",
-	"assets/model/sky_01.png",
-	"assets/model/TreasureChest.png",
+	"assets/model/sphere_01.png",
+	"assets/model/box_02.png",
+
 };
 
 
@@ -64,7 +59,9 @@ protected:
 
 	sphere mSphere;
 	aabb mAabb;
-
+	GameObject* pColliderObject;
+	XMFLOAT3 mBackupPos;
+	int mColliderType;
 
 	//*******************************************
 	// 関数
@@ -73,9 +70,16 @@ public:
 	ColliderComponent();
 	~ColliderComponent();
 
-	void Init() override;
-	void Update() override;
-	void Release() override;
+	// 第一引数：当たり判定範囲（半径）
+	void InitSphere(float);
+	// 第一引数：当たり判定範囲（半径xyz）
+	void InitAabb(XMFLOAT3);
+	// 第一引数：当たり判定ターゲット
+	void Update(ColliderComponent*);
+	// バックアップ位置更新
+	void UpdateBackup();
+	void Draw();
+	void Release();
 
 	// 球設定
 	void SetSphere(XMFLOAT3, float);
@@ -83,8 +87,8 @@ public:
 	void SetAabb(XMFLOAT3, XMFLOAT3, XMFLOAT3);
 
 	// 衝突判定を返す
-	bool GetSphere();
-	bool GetAabb();
+	bool Hit(ColliderComponent*);
+	bool HitAabb();
 
 };
 

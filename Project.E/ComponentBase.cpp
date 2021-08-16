@@ -8,12 +8,13 @@ ComponentBase::ComponentBase()
 
 ComponentBase::~ComponentBase()
 {
-
+	
+	
 }
 
-void ComponentBase::SetOwner(GameObject obj)
+void ComponentBase::SetOwner(GameObject* obj)
 {
-	mpOwner = &obj;
+	mpOwner = obj;
 }
 
 void ComponentBase::Init()
@@ -22,6 +23,11 @@ void ComponentBase::Init()
 }
 
 void ComponentBase::Update()
+{
+	// Œp³æ‚Åˆ—“à—e‚ğ‘‚­
+}
+
+void ComponentBase::Draw()
 {
 	// Œp³æ‚Åˆ—“à—e‚ğ‘‚­
 }
