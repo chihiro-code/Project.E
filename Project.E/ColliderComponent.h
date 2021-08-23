@@ -35,6 +35,15 @@ static const char* gpFbxColliderTextureFileNames[] = {
 };
 
 
+//***********************************************
+// FBXモデルの当たり判定パラメータを設定する構造体
+//***********************************************
+struct ColliderParameter {
+	float sphereRadius;  // オブジェクトのサイズに対しての当たり判定のサイズ倍率
+	XMFLOAT3 aabbLength; // オブジェクトのサイズに対しての当たり判定のサイズ倍率
+};
+
+
 //*************************************
 // ColliderComponent class
 //*************************************
@@ -70,13 +79,13 @@ public:
 	ColliderComponent();
 	~ColliderComponent();
 
-	// 第一引数：当たり判定範囲（半径）
+	// 第一引数：当たり判定範囲比率（半径）
 	void InitSphere(float);
-	// 第一引数：当たり判定範囲（半径xyz）
+	// 第一引数：当たり判定範囲比率（半径xyz）
 	void InitAabb(XMFLOAT3);
 	// 第一引数：当たり判定ターゲット
 	void Update(ColliderComponent*);
-	// バックアップ位置更新
+	// バックアップ位置更新（当たり判定確認後に実行する）
 	void UpdateBackup();
 	void Draw();
 	void Release();

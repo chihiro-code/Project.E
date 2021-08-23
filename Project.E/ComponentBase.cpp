@@ -9,7 +9,6 @@ ComponentBase::ComponentBase()
 ComponentBase::~ComponentBase()
 {
 	
-	
 }
 
 void ComponentBase::SetOwner(GameObject* obj)

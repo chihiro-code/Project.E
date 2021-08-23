@@ -8,6 +8,7 @@
 #include "Light.h"
 #include "GameObject.h"
 #include "ShaderClass.h"
+#include "Map.h"
 
 
 //*************************************
@@ -33,6 +34,9 @@ HRESULT Game_Initialize(void)
 
 	// ゲームオブジェクト
 	GameObjectInit();
+
+	// グリッドマップ
+	MapInit();
 
 	// シェーダー
 	ShaderInit();
@@ -76,6 +80,9 @@ void Game_Render(void)
 	// ゲームオブジェクト
 	GameObjectDraw();
 
+	// グリッドマップ
+	MapDraw();
+
 
 	// ↑↑↑　描画処理をここに書く　↑↑↑
 	//------------------------------------
@@ -96,6 +103,9 @@ void Game_Release(void)
 
 	// ゲームオブジェクト
 	GameObjectRelease();
+
+	// グリッドマップ
+	MapRelease();
 
 	// ライト
 	LightRelease();

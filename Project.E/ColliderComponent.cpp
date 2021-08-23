@@ -29,15 +29,15 @@ ColliderComponent::ColliderComponent()
 
 ColliderComponent::~ColliderComponent()
 {
-	delete pColliderObject;
 	
 }
 
-void ColliderComponent::InitSphere(float radius)
+void ColliderComponent::InitSphere(float radiusRatio)
 {
 	// 位置、範囲設定
 	mSphere.centerPos = mpOwner->PositionGet();
-	mSphere.radius = radius;
+	XMFLOAT3 radius = mpOwner->ScaleGet();
+	mSphere.radius = (radius.x + radius.y + radius.z) / 3.0f * radiusRatio;
 
 	// バックアップ位置保存
 	mBackupPos = mSphere.centerPos;
@@ -51,16 +51,17 @@ void ColliderComponent::InitSphere(float radius)
 	pColliderObject->ShadowOnOf(false);
 	pColliderObject->PositionSet(mSphere.centerPos.x, mSphere.centerPos.y, mSphere.centerPos.z);
 	pColliderObject->RotationSet(0, 0, 0);
-	pColliderObject->ScaleSet(0.1f * radius, 0.1f * radius, 0.1f * radius);
+	pColliderObject->ScaleSet(0.1f * mSphere.radius, 0.1f * mSphere.radius, 0.1f * mSphere.radius);
 
 }
 
-void ColliderComponent::InitAabb(XMFLOAT3 length)
+void ColliderComponent::InitAabb(XMFLOAT3 lengthRatio)
 {
 	// 位置、範囲設定
 	mAabb.centerPos = mpOwner->PositionGet();
 	mAabb.rot = mpOwner->RotationGet();
-	mAabb.length = length;
+	mAabb.length = mpOwner->ScaleGet();
+	mAabb.length = { mAabb.length.x * lengthRatio.x, mAabb.length.y * lengthRatio.y, mAabb.length.z * lengthRatio.z };
 
 	// バックアップ位置保存
 	mBackupPos = mAabb.centerPos;
@@ -74,7 +75,7 @@ void ColliderComponent::InitAabb(XMFLOAT3 length)
 	pColliderObject->ShadowOnOf(false);
 	pColliderObject->PositionSet(mAabb.centerPos.x, mAabb.centerPos.y, mAabb.centerPos.z);
 	pColliderObject->RotationSet(mAabb.rot.x, mAabb.rot.y, mAabb.rot.z);
-	pColliderObject->ScaleSet(0.1f * length.x, 0.1f * length.y, 0.1f * length.z);
+	pColliderObject->ScaleSet(0.1f * mAabb.length.x, 0.1f * mAabb.length.y, 0.1f * mAabb.length.z);
 }
 
 void ColliderComponent::Update(ColliderComponent* pColTarget)
@@ -123,7 +124,8 @@ void ColliderComponent::Draw()
 
 void ColliderComponent::Release()
 {
-	
+	pColliderObject->Release();
+	delete pColliderObject;
 }
 
 void ColliderComponent::SetSphere(XMFLOAT3 centerPos, float radius)

@@ -8,6 +8,7 @@
 #include "Light.h"
 #include "ComponentBase.h"
 #include "ColliderComponent.h"
+#include "Map.h"
  
 
 //*************************************
@@ -21,6 +22,7 @@
 //*************************************
 GameObject* gpGameObject[MAX_GAMEOBJECT];
 ColliderComponent* gpColliderComponent[COLLIDER_NUM];
+ColliderParameter gObjectColliderParameter[MAX_GAMEOBJECT];
 
 
 //*************************************
@@ -66,23 +68,33 @@ void GameObject::Draw(void)
 
 void GameObject::Release(void)
 {
-	if (mMeshData->pSubmeshArray->pIndexBuffer != NULL) {
+	// ボーン
+	if (mMeshData->motion == true) {
+		if (mMeshData->animator.modelBone != nullptr) {
+			free(mMeshData->animator.modelBone); // Bone*
+			mMeshData->animator.modelBone = nullptr;
+		}
+	}
+
+	// サブメッシュ
+	if (mMeshData->pSubmeshArray->pIndexBuffer != nullptr) {
 		SAFE_RELEASE(mMeshData->pSubmeshArray->pIndexBuffer);  // ID3D11Buffer*
 	}
-	if (mMeshData->pSubmeshArray->pVertexBuffer != NULL) {
+	if (mMeshData->pSubmeshArray->pVertexBuffer != nullptr) {
 		SAFE_RELEASE(mMeshData->pSubmeshArray->pVertexBuffer); // ID3D11Buffer*
 	}
-	if (mMeshData->pSubmeshArray != NULL) {
-		free(mMeshData->pSubmeshArray); // SUBMESH*
-		mMeshData->pSubmeshArray = NULL;
+	if (mMeshData->pSubmeshArray->pTexture != nullptr) {
+		DX11TEXTURE_Release(mMeshData->pSubmeshArray->pTexture); // DX11TEXTURE*
 	}
-	//if (mMeshData->mAnimator != NULL) {
-	//	free(mMeshData->mAnimator); // Bone*
-	//	mMeshData->mAnimator = NULL;
-	//}
-	if (mMeshData != NULL) {
+	if (mMeshData->pSubmeshArray != nullptr) {
+		free(mMeshData->pSubmeshArray); // SUBMESH*
+		mMeshData->pSubmeshArray = nullptr;
+	}
+
+	// メッシュ
+	if (mMeshData != nullptr) {
 		free(mMeshData); // MESH*
-		mMeshData = NULL;
+		mMeshData = nullptr;
 	}
 }
 
@@ -131,6 +143,11 @@ XMFLOAT3 GameObject::ScaleGet()
 {
 	XMFLOAT3 scl = { mScl.x, mScl.y, mScl.z };
 	return scl;
+}
+
+void GameObject::AliveSet(bool alive)
+{
+	mAlive = alive;
 }
 
 
@@ -625,7 +642,7 @@ void GameObject::GetMeshData(int target, FbxScene* scene)
 		verbuf[i].color[0] = 0.0f;
 		verbuf[i].color[1] = 0.0f;
 		verbuf[i].color[2] = 0.0f;
-		verbuf[i].color[3] = 1.0f; // アルファ値　下げると透ける
+		verbuf[i].color[3] = 0.5f; // アルファ値　下げると透ける
 	}
 
 	//法線取得　インデックス順
@@ -867,7 +884,7 @@ void GameObject::GetMeshData(int target, FbxScene* scene)
 	ibDesc.StructureByteStride = 0;
 
 	D3D11_SUBRESOURCE_DATA irData;                                  //D3D11_SUBRESOURCE_DATA : バッファ作成時の設定値を記録する構造体
-	irData.pSysMem = indbuf;                                  //参照するインデックスデータを持っている実体部
+	irData.pSysMem = indbuf;                                        //参照するインデックスデータを持っている実体部
 	irData.SysMemPitch = 0;
 	irData.SysMemSlicePitch = 0;
 
@@ -1088,21 +1105,26 @@ void GameObjectInit(void) {
 	GameObjectSetParameter();
 
 
+	//-------------------------------------------
 	// コンポーネント追加
+	//-------------------------------------------
+	// 当たり判定
 	// ゴースト
 	gpColliderComponent[ENEMY_01] = new ColliderComponent;
 	gpColliderComponent[ENEMY_01]->SetOwner(gpGameObject[ENEMY_01]);
-	gpColliderComponent[ENEMY_01]->InitSphere(6.0f);
+	gpColliderComponent[ENEMY_01]->InitSphere(gObjectColliderParameter[ENEMY_01].sphereRadius);
 	// 木
 	gpColliderComponent[TREE_01] = new ColliderComponent;
 	gpColliderComponent[TREE_01]->SetOwner(gpGameObject[TREE_01]);
-	XMFLOAT3 length = { 5.0f, 50.0f, 5.0f };
-	gpColliderComponent[TREE_01]->InitAabb(length);
+	/*XMFLOAT3 length = gpGameObject[TREE_01]->ScaleGet();
+	length = { length.x * 1.0f, length.y * 10.0f, length.z * 1.0f };*/
+	gpColliderComponent[TREE_01]->InitAabb(gObjectColliderParameter[TREE_01].aabbLength);
 	// 宝箱
 	gpColliderComponent[TREASURECHEST] = new ColliderComponent;
 	gpColliderComponent[TREASURECHEST]->SetOwner(gpGameObject[TREASURECHEST]);
-	length = { 10.0f, 20.0f, 8.0f };
-	gpColliderComponent[TREASURECHEST]->InitAabb(length);
+	/*length = gpGameObject[TREASURECHEST]->ScaleGet();*/
+	/*length = { length.x * 10.0f, length.y * 20.0f, length.z * 8.0f };*/
+	gpColliderComponent[TREASURECHEST]->InitAabb(gObjectColliderParameter[TREASURECHEST].aabbLength);
 
 }
 
@@ -1127,9 +1149,15 @@ void GameObjectUpdate(void) {
 	gpGameObject[ENEMY_01]->PositionSet(pos.x, pos.y, pos.z);
 
 
-	// コンポーネント
+	//-------------------------------------------
+	// コンポーネント追加
+	//-------------------------------------------
+	// 当たり判定
+	Map* gridMap = GetGridMap();
+
 	gpColliderComponent[ENEMY_01]->Update(gpColliderComponent[TREE_01]);
-	gpColliderComponent[ENEMY_01]->Update(gpColliderComponent[TREASURECHEST]); // 2個めが反応しない....
+	gpColliderComponent[ENEMY_01]->Update(gpColliderComponent[TREASURECHEST]);
+	gridMap->Update(gpColliderComponent[ENEMY_01], MAP_TREE_01);
 	gpColliderComponent[ENEMY_01]->UpdateBackup();
 
 }
@@ -1155,7 +1183,10 @@ void GameObjectDraw(void) {
 	}
 
 
-	// コンポーネント
+	//-------------------------------------------
+	// コンポーネント追加
+	//-------------------------------------------
+	// 当たり判定
 	for (int i = 0; i < COLLIDER_NUM; i++) {
 		gpColliderComponent[i]->Draw();
 	}
@@ -1166,12 +1197,17 @@ void GameObjectDraw(void) {
 void GameObjectRelease(void) {
 
 	for (int i = 0; i < MAX_GAMEOBJECT; i++) {
+		gpGameObject[i]->Release();
 		delete gpGameObject[i];
 	}
 
 
-	// コンポーネント
+	//-------------------------------------------
+	// コンポーネント追加
+	//-------------------------------------------
+	// 当たり判定
 	for (int i = 0; i < COLLIDER_NUM; i++) {
+		gpColliderComponent[i]->Release();
 		delete gpColliderComponent[i];
 	}
 
@@ -1184,16 +1220,19 @@ void GameObjectSetParameter(void) {
 	gpGameObject[ENEMY_01]->PositionSet(0, 10.0f, 0);
 	gpGameObject[ENEMY_01]->RotationSet(0, 0, 0);
 	gpGameObject[ENEMY_01]->ScaleSet(0.1f, 0.1f, 0.1f);
+	gObjectColliderParameter[ENEMY_01].sphereRadius = 60.0f;
 
 	// 木01
 	gpGameObject[TREE_01]->PositionSet(60.0f, 0.0f, 20.0f);
 	gpGameObject[TREE_01]->RotationSet(0, 0, 0);
-	gpGameObject[TREE_01]->ScaleSet(5.0f, 5.0f, 5.0f);
+	gpGameObject[TREE_01]->ScaleSet(2.0f, 2.0f, 2.0f);
+	gObjectColliderParameter[TREE_01].aabbLength = {1.0f, 10.0f, 1.0f};
 
 	// 宝箱
 	gpGameObject[TREASURECHEST]->PositionSet(50.0f, 0, 80.0f);
 	gpGameObject[TREASURECHEST]->RotationSet(0, 0, 0);
 	gpGameObject[TREASURECHEST]->ScaleSet(1.0f, 1.0f, 1.0f);
+	gObjectColliderParameter[TREASURECHEST].aabbLength = { 10.0f, 20.0f, 8.0f };
 
 	// マップ01
 	gpGameObject[MAP_01]->PositionSet(0, 0, 0);
@@ -1211,3 +1250,4 @@ void GameObjectSetParameter(void) {
 	gpGameObject[BOX_01]->ScaleSet(0.1f, 0.1f, 0.1f);
 
 }
+

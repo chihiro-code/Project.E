@@ -33,7 +33,7 @@ static const char* gpFbxModelFileNames[] = {
 	"assets/model/TreasureChest.fbx",
 	"assets/model/field_01.fbx",
 	"assets/model/sky_01.fbx",
-	"assets/model/box_01.fbx",
+	"assets/model/box_02.fbx",
 };
 
 // FBXモデル　テクスチャ
@@ -43,7 +43,7 @@ static const char* gpFbxTextureFileNames[] = {
 	"assets/model/TreasureChest.png",
 	"assets/model/field_01.png",
 	"assets/model/sky_01.png",
-	"assets/model/box_01.png",
+	"assets/model/box_02.png",
 };
 
 
@@ -234,6 +234,7 @@ public:
 	void SpecularSet(float red, float green, float blue, float power);
 	void ShadowOnOf(bool);
 	void ShadowDraw(); // 描画（影）
+	void AliveSet(bool);
 
 	XMFLOAT3 PositionGet();
 	XMFLOAT3 RotationGet();
