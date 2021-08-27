@@ -89,12 +89,13 @@ public:
 	void Init(int, float, float);
 	void InitCollider();
 	void Update(ColliderComponent*, int id);
+	void DrawShadow();
 	void Draw(bool);
 	void Release();
 
 	// 指定したオブジェクトの種類のサイズを変更
 	void ScaleSet(int, float, float, float);
-	// 
+
 
 private:
 	// オブジェクト配置位置をテキストから読み込み
@@ -116,6 +117,7 @@ Map* GetGridMap();
 
 void MapInit();
 void MapUpdate();
+void MapDrawShadow();
 void MapDraw();
 void MapRelease();
 void MapSetParameter();

@@ -354,9 +354,15 @@ void DirectX11Manager::RenderTargetsSet(void)
 
 void DirectX11Manager::RenderTargetsSetShadow()
 {
+    Shader* shader = GetShader();
+
+    manager->mpImContext->OMSetRenderTargets(0, nullptr, shader->mpShadowDepthStencilView.Get()); // 深度ステンシルビューを影用へ
+}
+
+void DirectX11Manager::RenderTargetsSetShadowNoMotion()
+{
     Shader* shaderNoMotion = GetShaderNoMotion();
 
-    //manager->mpImContext->ClearDepthStencilView(shaderNoMotion->mpShadowDepthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
     manager->mpImContext->OMSetRenderTargets(0, nullptr, shaderNoMotion->mpShadowDepthStencilView.Get()); // 深度ステンシルビューを影用へ
 }
 

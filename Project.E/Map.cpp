@@ -66,6 +66,19 @@ void Map::Update(ColliderComponent* collider, int id)
 
 }
 
+void Map::DrawShadow()
+{
+	//----------------------------------------------
+	// グリッドマップ
+	//----------------------------------------------
+	for (int i = 1; i < MAX_MAP_MODEL; i++) { // 0番目は描画しない
+		for (int j = 0; j < mModelCnt[i]; j++) {
+			mMapObject[i][j].ShadowDraw();
+		}
+	}
+
+}
+
 void Map::Draw(bool collider)
 {
 	//----------------------------------------------
@@ -157,7 +170,7 @@ HRESULT Map::GridMapLoadFromFile(const char* const pFileName, float height, floa
 				mMapObject[i][0].FbxInit((char*)gpFbxMapModelFileNames[i], (char*)gpFbxMapTextureFileNames[i]); // FBXモデル読み込み
 				for (int j = 0; j < mModelCnt[i]; j++) {
 					mMapObject[i][j] = mMapObject[i][0];
-					mMapObject[i][j].ShadowOnOf(false);
+					mMapObject[i][j].ShadowOnOf(true);
 					mMapObject[i][j].ScaleSet(1.0f, 1.0f, 1.0f);
 				}
 			}
@@ -255,6 +268,11 @@ void MapInit()
 void MapUpdate()
 {
 	
+}
+
+void MapDrawShadow()
+{
+	gpMap->DrawShadow();
 }
 
 void MapDraw()

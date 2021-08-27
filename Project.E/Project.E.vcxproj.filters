@@ -66,6 +66,9 @@
     <ClInclude Include="ComponentBase.h">
       <Filter>ヘッダー ファイル\Component</Filter>
     </ClInclude>
+    <ClInclude Include="XAudio2.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dx11texture.cpp">
@@ -110,6 +113,9 @@
     <ClCompile Include="ComponentBase.cpp">
       <Filter>ソース ファイル\Component</Filter>
     </ClCompile>
+    <ClCompile Include="XAudio2.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="shader\ps.hlsl">
@@ -125,6 +131,9 @@
       <Filter>shader</Filter>
     </FxCompile>
     <FxCompile Include="shader\vs2_shadow.hlsl">
+      <Filter>shader</Filter>
+    </FxCompile>
+    <FxCompile Include="shader\vs_shadow.hlsl">
       <Filter>shader</Filter>
     </FxCompile>
   </ItemGroup>

@@ -29,6 +29,7 @@ enum GAMEOBJECT_ID {
 // FBXモデル　メッシュ
 static const char* gpFbxModelFileNames[] = {
 	"assets/model/Ghost02.fbx",
+	//"assets/model/type01-09-OnMotion.fbx",
 	"assets/model/tree_01.fbx",
 	"assets/model/TreasureChest.fbx",
 	"assets/model/field_01.fbx",
@@ -39,6 +40,7 @@ static const char* gpFbxModelFileNames[] = {
 // FBXモデル　テクスチャ
 static const char* gpFbxTextureFileNames[] = {
 	"assets/model/Ghost02.png",
+	//"assets/model/type01-04.png",
 	"assets/model/tree_01.png",
 	"assets/model/TreasureChest.png",
 	"assets/model/field_01.png",
@@ -279,8 +281,11 @@ private:
 	// 影表示で使用↓
 	//---------------------------------
 
-	// シェーダー描画（影）
+	// シェーダー描画（影　モーションあり）
 	void ShadowShaderDraw(CameraBuffer);
+
+	// シェーダー描画（影　モーションなし）
+	void ShadowShaderDrawNomotion(CameraBuffer);
 	
 	// 画面クリア（影）
 	void ShadowClearScreen();
@@ -299,6 +304,7 @@ GameObject* GetGameObject(int);
 
 void GameObjectInit();
 void GameObjectUpdate();
+void GameObjectDrawShadow();
 void GameObjectDraw();
 void GameObjectRelease();
 void GameObjectSetParameter();

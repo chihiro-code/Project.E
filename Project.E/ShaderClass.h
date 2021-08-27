@@ -21,7 +21,6 @@ public:
     PixelShader  mpPixelShader = nullptr;
     
     //描画用
-    // モーションあり
     ComPtr<ID3D11Buffer> mpConstantBufferWorld = nullptr;
     ComPtr<ID3D11Buffer> mpConstantBufferAnime = nullptr;
     ComPtr<ID3D11Buffer> mpConstantBufferLight = nullptr;
@@ -35,7 +34,8 @@ public:
     VertexShader                     mpShadowVertexShader = nullptr;
     PixelShader                      mpShadowPixelShader = nullptr;
   
-    ComPtr<ID3D11Buffer>             mpShadowConstantBuffer = nullptr;
+    ComPtr<ID3D11Buffer>             mpShadowConstantBufferWorld = nullptr;
+    ComPtr<ID3D11Buffer>             mpShadowConstantBufferAnime = nullptr;
     ComPtr<ID3D11RasterizerState>    mpShadowRasterState = nullptr;
     ComPtr<ID3D11Texture2D>          mpShadowDepthStencilTexture = nullptr;
     ComPtr<ID3D11SamplerState>       mpShadowSampler = nullptr;
@@ -63,7 +63,10 @@ public:
     // 影描画用
     //---------------------------------
 
-    // シェーダー初期化（影）
+    // シェーダー初期化（影　モーションあり）
+    void ShaderInitShadow();
+
+    // シェーダー初期化（影　モーションなし）
     void ShaderInitNoMotionShadow();
 
 };

@@ -9,6 +9,7 @@
 #include "GameObject.h"
 #include "ShaderClass.h"
 #include "Map.h"
+#include "XAudio2.h"
 
 
 //*************************************
@@ -41,6 +42,10 @@ HRESULT Game_Initialize(void)
 	// シェーダー
 	ShaderInit();
 
+	// XAudio
+	InitSound();
+
+
 	return S_OK;
 }
 
@@ -50,6 +55,9 @@ HRESULT Game_Initialize(void)
 //*************************************
 void Game_Update(void)
 {
+	// XAudio更新
+	UpdateSound();
+
 	// カメラ
 	CameraUpdate();
 
@@ -71,11 +79,28 @@ void Game_Render(void)
 	
 	// 画面クリア
 	manager->ClearScreen();
-	manager->RenderTargetsSet();
+	
 
-	//------------------------------------
+	//===========================================
 	// ↓↓↓　描画処理をここに書く　↓↓↓
 
+
+	//---------------------------------
+	// シャドウマップ作成
+	//---------------------------------
+	manager->RenderTargetsSetShadowNoMotion();
+
+	// ゲームオブジェクト
+	GameObjectDrawShadow();
+
+	// グリッドマップ
+	MapDrawShadow();
+
+
+	//---------------------------------
+	// モデル描画
+	//---------------------------------
+	manager->RenderTargetsSet();
 
 	// ゲームオブジェクト
 	GameObjectDraw();
@@ -85,7 +110,7 @@ void Game_Render(void)
 
 
 	// ↑↑↑　描画処理をここに書く　↑↑↑
-	//------------------------------------
+	//===========================================
 
 	// ダブル・バッファのディスプレイ領域へのコピー命令
 	manager->UpdateScreen();
@@ -98,6 +123,9 @@ void Game_Render(void)
 //*************************************
 void Game_Release(void)
 {
+	// XAudio解放
+	UninitSound();
+
 	// シェーダー
 	ShaderRelease();
 

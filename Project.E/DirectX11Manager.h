@@ -80,8 +80,10 @@ public: // 関数
     void ClearScreen();
     // RenderTargets設定
     void RenderTargetsSet();
-    // 
+    // RenderTargets設定（影　モーションあり）
     void RenderTargetsSetShadow();
+    // RenderTargets設定（影　モーションなし）
+    void RenderTargetsSetShadowNoMotion();
     // ダブル・バッファのディスプレイ領域へのコピー命令
     void UpdateScreen();
     // 画面サイズ取得（幅）
