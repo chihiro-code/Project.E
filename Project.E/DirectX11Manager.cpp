@@ -334,7 +334,7 @@ HRESULT DirectX11Manager::Init(HINSTANCE hInstance, int nCmdShow)
 
 void DirectX11Manager::ClearScreen(void)
 {
-    Shader* shaderNoMotion = GetShaderNoMotion();
+    Shader* shaderShadow = GetShaderShadow();
 
     // 画面クリア（指定色で塗りつぶし）
     // 塗りつぶし色の指定（小数：0.0f～1.0f）
@@ -344,7 +344,7 @@ void DirectX11Manager::ClearScreen(void)
     mpImContext->ClearRenderTargetView(mpRTView.Get(), clearColor);
     mpImContext->ClearDepthStencilView(mpDSView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
     // 影用
-    mpImContext->ClearDepthStencilView(shaderNoMotion->mpShadowDepthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+    mpImContext->ClearDepthStencilView(shaderShadow->mpShadowDepthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 }
 
 void DirectX11Manager::RenderTargetsSet(void)
@@ -352,19 +352,24 @@ void DirectX11Manager::RenderTargetsSet(void)
     manager->mpImContext->OMSetRenderTargets(1, manager->mpRTView.GetAddressOf(), manager->mpDSView.Get());
 }
 
+void DirectX11Manager::RenderTargetsSetDisableZbuffer()
+{
+    manager->mpImContext->OMSetRenderTargets(1, manager->mpRTView.GetAddressOf(), NULL);
+}
+
 void DirectX11Manager::RenderTargetsSetShadow()
 {
-    Shader* shader = GetShader();
+    Shader* shaderShadow = GetShaderShadow();
 
-    manager->mpImContext->OMSetRenderTargets(0, nullptr, shader->mpShadowDepthStencilView.Get()); // 深度ステンシルビューを影用へ
+    manager->mpImContext->OMSetRenderTargets(0, nullptr, shaderShadow->mpShadowDepthStencilView.Get()); // 深度ステンシルビューを影用へ
 }
 
-void DirectX11Manager::RenderTargetsSetShadowNoMotion()
-{
-    Shader* shaderNoMotion = GetShaderNoMotion();
-
-    manager->mpImContext->OMSetRenderTargets(0, nullptr, shaderNoMotion->mpShadowDepthStencilView.Get()); // 深度ステンシルビューを影用へ
-}
+//void DirectX11Manager::RenderTargetsSetShadowNoMotion()
+//{
+//    Shader* shaderNoMotion = GetShaderNoMotion();
+//
+//    manager->mpImContext->OMSetRenderTargets(0, nullptr, shaderNoMotion->mpShadowDepthStencilView.Get()); // 深度ステンシルビューを影用へ
+//}
 
 void DirectX11Manager::UpdateScreen(void)
 {

@@ -17,10 +17,15 @@
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "d3dcompiler.lib")
 
+// unique_ptrスマートポインタ使用のため
+#include <memory>  
+
 //DirectXMathがDirectXのネームスペースにある
 using namespace DirectX;
 //ComPtr(DirectX版のスマートポインタ)
 using Microsoft::WRL::ComPtr;
+// unique_ptrスマートポインタ
+using std::unique_ptr;
 
 //書きやすいようにtypedef色々
 typedef ComPtr<ID3D11Buffer> /*ConstantBuffer,*/ VertexBuffer, IndexBuffer, StructuredBuffer;
@@ -32,6 +37,7 @@ typedef ComPtr<ID3D11ComputeShader>       ComputeShader;
 typedef ComPtr<ID3D11Texture2D>           Texture2D;
 typedef ComPtr<ID3D11ShaderResourceView>  ShaderTexture;
 typedef ComPtr<ID3D11UnorderedAccessView> ComputeOutputView;
+typedef ComPtr<ID3D11RasterizerState>     RasterizerState;
 
 
 //*************************************
@@ -80,10 +86,12 @@ public: // 関数
     void ClearScreen();
     // RenderTargets設定
     void RenderTargetsSet();
+    // RenderTargets設定 Zバッファ無効
+    void RenderTargetsSetDisableZbuffer();
     // RenderTargets設定（影　モーションあり）
     void RenderTargetsSetShadow();
     // RenderTargets設定（影　モーションなし）
-    void RenderTargetsSetShadowNoMotion();
+    //void RenderTargetsSetShadowNoMotion();
     // ダブル・バッファのディスプレイ領域へのコピー命令
     void UpdateScreen();
     // 画面サイズ取得（幅）

@@ -12,6 +12,7 @@ using namespace DirectX;
 // GameObjectで管理するモデルのIDリストを定義する
 //***********************************************
 enum GAMEOBJECT_ID {
+	PLAYER,        // プレイヤー
 	ENEMY_01,      // ゴースト
 	TREE_01,       // 木01
 	TREASURECHEST, // 宝箱
@@ -28,11 +29,11 @@ enum GAMEOBJECT_ID {
 //***********************************************
 // FBXモデル　メッシュ
 static const char* gpFbxModelFileNames[] = {
-	"assets/model/Ghost02.fbx",
-	//"assets/model/type01-09-OnMotion.fbx",
+	"assets/model/Ghost_aima.fbx",
+	"assets/model/Ghost_aima.fbx",
 	"assets/model/tree_01.fbx",
 	"assets/model/TreasureChest.fbx",
-	"assets/model/field_01.fbx",
+	"assets/model/GolemMap.fbx",
 	"assets/model/sky_01.fbx",
 	"assets/model/box_02.fbx",
 };
@@ -40,10 +41,10 @@ static const char* gpFbxModelFileNames[] = {
 // FBXモデル　テクスチャ
 static const char* gpFbxTextureFileNames[] = {
 	"assets/model/Ghost02.png",
-	//"assets/model/type01-04.png",
+	"assets/model/Ghost02.png",
 	"assets/model/tree_01.png",
 	"assets/model/TreasureChest.png",
-	"assets/model/field_01.png",
+	"assets/model/GolemMap.png",
 	"assets/model/sky_01.png",
 	"assets/model/box_02.png",
 };
@@ -237,6 +238,7 @@ public:
 	void ShadowOnOf(bool);
 	void ShadowDraw(); // 描画（影）
 	void AliveSet(bool);
+	void AnimationUpdate(int start, int end, float speed); // アニメーション更新
 
 	XMFLOAT3 PositionGet();
 	XMFLOAT3 RotationGet();
@@ -286,9 +288,6 @@ private:
 
 	// シェーダー描画（影　モーションなし）
 	void ShadowShaderDrawNomotion(CameraBuffer);
-	
-	// 画面クリア（影）
-	void ShadowClearScreen();
 
 
 };

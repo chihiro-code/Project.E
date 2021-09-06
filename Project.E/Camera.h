@@ -63,6 +63,7 @@ public:
 	XMMATRIX GetViewMatrix();
 	XMMATRIX GetViewProjectionMatrix();
 	XMFLOAT4 GetPosition();
+	float GetRotY();
 
 	// マウス更新
 	void MousUpdate(void);

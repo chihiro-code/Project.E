@@ -8,6 +8,9 @@ Map* gpMap;
 ColliderParameter gMapColliderParameter[MAX_MAP_MODEL];
 
 
+//*************************************
+// Mapä÷êî
+//*************************************
 Map::Map()
 {
 	mGridHeight = 50.0f;

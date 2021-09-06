@@ -74,6 +74,11 @@ XMFLOAT4 Camera::GetPosition(void)
 	return viewPos;
 }
 
+float Camera::GetRotY()
+{
+	return mRotY;
+}
+
 void Camera::MousUpdate(void)
 {
 	long mouseCurrStateX = GetMouseAxisX(); //マウスデータ取得(X軸移動)
@@ -177,7 +182,7 @@ void CameraInit(void) {
 }
 
 void CameraUpdate(void) {
-	GameObject* GameObject = GetGameObject(ENEMY_01);
+	GameObject* GameObject = GetGameObject(PLAYER);
 
 	// マウス更新
 	gpCamera->MousUpdate();

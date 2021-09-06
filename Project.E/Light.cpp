@@ -124,7 +124,7 @@ Light* GetLight()
 void LightInit()
 {
 	gpLight = new Light;
-	gpLight->SetPosition(0.0f, 50.0f, 0.0f);
+	gpLight->SetPosition(0.0f, 100.0f, 0.0f);
 	gpLight->SetFocus(0.0f, 5.0f, 0.0f);
 	gpLight->SetColor(0.9f, 0.9f, 0.9f, 1.0f);
 	gpLight->Init();

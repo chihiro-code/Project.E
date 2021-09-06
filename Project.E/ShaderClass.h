@@ -31,7 +31,9 @@ public:
     // 影描画用
     //---------------------------------
     InputLayout                      mpShadowInputLayout = nullptr;
+    InputLayout                      mpShadowInputLayoutNm = nullptr;
     VertexShader                     mpShadowVertexShader = nullptr;
+    VertexShader                     mpShadowVertexShaderNm = nullptr;
     PixelShader                      mpShadowPixelShader = nullptr;
   
     ComPtr<ID3D11Buffer>             mpShadowConstantBufferWorld = nullptr;
@@ -79,6 +81,7 @@ public:
 // ゲット関数
 Shader* GetShader();
 Shader* GetShaderNoMotion();
+Shader* GetShaderShadow();
 
 // シェーダー初期化
 void ShaderInit();

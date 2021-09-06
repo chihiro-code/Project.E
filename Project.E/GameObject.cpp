@@ -14,7 +14,7 @@
 //*************************************
 // マクロ定義
 //*************************************
-#define COLLIDER_NUM 3
+#define COLLIDER_NUM 4
 
 
 //*************************************
@@ -150,6 +150,22 @@ void GameObject::AliveSet(bool alive)
 	mAlive = alive;
 }
 
+void GameObject::AnimationUpdate(int start, int end, float speed)
+{
+	static float cnt = 0;
+
+	cnt += speed;
+	if (10.0f <= cnt) {
+		if (mMeshData->count >= start) {
+			mMeshData->count += 1;
+		}
+		if (mMeshData->count >= end) {
+			mMeshData->count = start;
+		}
+		cnt = 0;
+	}
+}
+
 
 //-------------------------------------
 // モデル読み込み
@@ -183,7 +199,7 @@ void GameObject::FbxInit(char* fbxPath, char* texturePath)
 void GameObject::FbxShaderInitChoice(Mesh* pMesh)
 {
 	DirectX11Manager* manager = GetDirectX11Manager();
-	Shader* shader = GetShader();
+	//Shader* shader = GetShader();
 
 	// モーションありかなしか
 	if (pMesh->motion == true) {
@@ -211,6 +227,7 @@ void GameObject::FbxShaderDraw(CameraBuffer cb)
 {
 	DirectX11Manager* manager = GetDirectX11Manager();
 	Shader* shader = GetShader();
+	Shader* shaderShadow = GetShaderShadow();
 	Camera* camera = GetCamera();
 	Light*  light  = GetLight();
 
@@ -221,18 +238,16 @@ void GameObject::FbxShaderDraw(CameraBuffer cb)
 	}
 
 
+	// アニメーション
 	//初期化
 	for (int i = 0; i < mMeshData->boneNum; i++) {
 		mMeshData->animator.animeBuffer.animematrix[i] = XMMatrixIdentity();
 	}
 
-
-	mMeshData->count++;
+	//mMeshData->count++;
 	if (mMeshData->count == mMeshData->animator.endframe) mMeshData->count = mMeshData->animator.startframe;
 	if (mMeshData->count < 0) mMeshData->count = 0;
-	/*mMeshData->animator.animeBuffer = FbxSetPose(mMeshData->count);*/
 	FbxSetPose(mMeshData->count);
-
 
 	//描画用コンテキストに合成した座標変換行列を登録
 	if (shader->mpConstantBufferAnime.Get() != NULL) {
@@ -269,24 +284,25 @@ void GameObject::FbxShaderDraw(CameraBuffer cb)
 
 	//テクスチャをピクセルシェーダーにセット
 	manager->mpImContext->PSSetShaderResources(0, 1, DX11TEXTURE_GetShaderResourceViewAddr(mMeshData->pSubmeshArray->pTexture));
-	manager->mpImContext->PSSetShaderResources(2, 1, shader->mpShadowShaderResourceView.GetAddressOf());
+	ToonMap_SetShaderResourceView(); // ToonMap
+	manager->mpImContext->PSSetShaderResources(2, 1, shaderShadow->mpShadowShaderResourceView.GetAddressOf());
 
+	// サンプラー
 	manager->mpImContext->PSSetSamplers(0, 1, manager->mpSampler.GetAddressOf());             //描画用コンテキストにテクスチャサンプラーを設定
-	manager->mpImContext->PSSetSamplers(1, 1, shader->mpShadowSampler.GetAddressOf());        //描画用コンテキストにテクスチャサンプラーを設定
-
-	manager->mpImContext->VSSetShader(shader->mpVertexShader.Get(), NULL, 0);                 //描画用コンテキストに頂点シェーダを設定
+	manager->mpImContext->PSSetSamplers(1, 1, shaderShadow->mpShadowSampler.GetAddressOf());        //描画用コンテキストにテクスチャサンプラーを設定
 
 	manager->mpImContext->RSSetViewports(1, &manager->mViewport);                             //描画用コンテキストにビューポートを設定                           
 	manager->mpImContext->RSSetState(shader->mpRasterState.Get());
 
+	// シェーダー
+	manager->mpImContext->VSSetShader(shader->mpVertexShader.Get(), NULL, 0);                 //描画用コンテキストに頂点シェーダを設定
 	// 影あり
-	if (mDrawShadow == true) manager->mpImContext->PSSetShader(shader->mpShadowPixelShader.Get(), NULL, 0); //描画用コンテキストにピクセルシェーダを設定
+	if (mDrawShadow == true) manager->mpImContext->PSSetShader(shaderShadow->mpShadowPixelShader.Get(), NULL, 0); //描画用コンテキストにピクセルシェーダを設定
+
 	// 影なし
 	else manager->mpImContext->PSSetShader(shader->mpPixelShader.Get(), NULL, 0);                           //描画用コンテキストにピクセルシェーダを設定
 
-	// ToonMap
-	ToonMap_SetShaderResourceView();
-
+	
 	//現在の頂点レイアウト、頂点バッファ、インデックスバッファ、テクスチャなどの設定を元に、
 	//第1引数の数だけ頂点を作成し、ポリゴンを描画する
 
@@ -311,7 +327,7 @@ void GameObject::FbxShaderDraw(CameraBuffer cb)
 		}
 
 		//ライティング定数はピクセルシェーダに送信
-		manager->mpImContext->PSSetConstantBuffers(0, 1, shader->mpConstantBufferLight.GetAddressOf());                       //描画用コンテキストに定数バッファを設定
+		manager->mpImContext->PSSetConstantBuffers(0, 1, shader->mpConstantBufferLight.GetAddressOf());                 //描画用コンテキストに定数バッファを設定
 
 		manager->mpImContext->IASetVertexBuffers(0, 1, &mMeshData->pSubmeshArray[i].pVertexBuffer, &strides, &offsets); //描画用コンテキストに頂点バッファを設定
 		manager->mpImContext->IASetIndexBuffer(mMeshData->pSubmeshArray[i].pIndexBuffer, DXGI_FORMAT_R16_UINT, 0);      //描画用コンテキストにインデックスバッファを設定
@@ -323,6 +339,7 @@ void GameObject::FbxNoMotionShaderDraw(CameraBuffer cb)
 {
 	DirectX11Manager* manager = GetDirectX11Manager();
 	Shader* shaderNoMotion = GetShaderNoMotion();
+	Shader* shaderShadow = GetShaderShadow();
 	Camera* camera = GetCamera();
 	Light*  light = GetLight();
 
@@ -357,26 +374,28 @@ void GameObject::FbxNoMotionShaderDraw(CameraBuffer cb)
 
 	manager->mpImContext->IASetInputLayout(shaderNoMotion->mpInputLayout.Get());                            //描画用コンテキストに頂点レイアウトを設定
 	manager->mpImContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);                    //描画用コンテキストのポリゴン描画順をインデックス準拠に設定
+
 	manager->mpImContext->VSSetConstantBuffers(0, 1, shaderNoMotion->mpConstantBufferWorld.GetAddressOf()); //描画用コンテキストに定数バッファを設定
 
 	//テクスチャをピクセルシェーダーにセット
 	manager->mpImContext->PSSetShaderResources(0, 1, DX11TEXTURE_GetShaderResourceViewAddr(mMeshData->pSubmeshArray->pTexture));
-	manager->mpImContext->PSSetShaderResources(2, 1, shaderNoMotion->mpShadowShaderResourceView.GetAddressOf());
+	ToonMap_SetShaderResourceView(); // ToonMap
+	manager->mpImContext->PSSetShaderResources(2, 1, shaderShadow->mpShadowShaderResourceView.GetAddressOf());
 
+	// サンプラー
 	manager->mpImContext->PSSetSamplers(0, 1, manager->mpSampler.GetAddressOf());                     //描画用コンテキストにテクスチャサンプラーを設定
-	manager->mpImContext->PSSetSamplers(1, 1, shaderNoMotion->mpShadowSampler.GetAddressOf());
-	manager->mpImContext->VSSetShader(shaderNoMotion->mpVertexShader.Get(), NULL, 0);                 //描画用コンテキストに頂点シェーダを設定
+	manager->mpImContext->PSSetSamplers(1, 1, shaderShadow->mpShadowSampler.GetAddressOf());
+
 	manager->mpImContext->RSSetViewports(1, &manager->mViewport);                                     //描画用コンテキストにビューポートを設定
 	manager->mpImContext->RSSetState(shaderNoMotion->mpRasterState.Get());                            //描画用コンテキストにラスタライザを設定
 
+	// シェーダー
+	manager->mpImContext->VSSetShader(shaderNoMotion->mpVertexShader.Get(), NULL, 0);                 //描画用コンテキストに頂点シェーダを設定
 	// 影あり
-	if (mDrawShadow == true) manager->mpImContext->PSSetShader(shaderNoMotion->mpShadowPixelShader.Get(), NULL, 0); //描画用コンテキストにピクセルシェーダを設定
+	if (mDrawShadow == true) manager->mpImContext->PSSetShader(shaderShadow->mpShadowPixelShader.Get(), NULL, 0); //描画用コンテキストにピクセルシェーダを設定
 	// 影なし
 	else manager->mpImContext->PSSetShader(shaderNoMotion->mpPixelShader.Get(), NULL, 0);                           //描画用コンテキストにピクセルシェーダを設定
 		
-	// ToonMap
-	ToonMap_SetShaderResourceView();
-
 
 	//現在の頂点レイアウト、頂点バッファ、インデックスバッファ、テクスチャなどの設定を元に、
 	//第1引数の数だけ頂点を作成し、ポリゴンを描画する
@@ -989,12 +1008,12 @@ void GameObject::GetMaterialLambert(SubMesh sm, FbxSurfaceMaterial* mati)
 void GameObject::ShadowShaderDraw(CameraBuffer cb)
 {
 	DirectX11Manager* manager = GetDirectX11Manager();
-	Shader* shader = GetShader();
+	Shader* shaderShadow = GetShaderShadow();
 
 
 	//描画用コンテキストに合成した座標変換行列を登録
-	if (shader->mpShadowConstantBufferWorld.Get() != NULL) {
-		manager->mpImContext->UpdateSubresource(shader->mpShadowConstantBufferWorld.Get(), 0, NULL, &cb, 0, 0);
+	if (shaderShadow->mpShadowConstantBufferWorld.Get() != NULL) {
+		manager->mpImContext->UpdateSubresource(shaderShadow->mpShadowConstantBufferWorld.Get(), 0, NULL, &cb, 0, 0);
 	}
 
 
@@ -1004,27 +1023,26 @@ void GameObject::ShadowShaderDraw(CameraBuffer cb)
 	}
 
 
-	mMeshData->count++;
+	//mMeshData->count++;
 	if (mMeshData->count == mMeshData->animator.endframe) mMeshData->count = mMeshData->animator.startframe;
 	if (mMeshData->count < 0) mMeshData->count = 0;
-	/*mMeshData->animator.animeBuffer = FbxSetPose(mMeshData->count);*/
 	FbxSetPose(mMeshData->count);
 
 
 	//描画用コンテキストに合成した座標変換行列を登録
-	if (shader->mpShadowConstantBufferAnime.Get() != NULL) {
-		manager->mpImContext->UpdateSubresource(shader->mpShadowConstantBufferAnime.Get(), 0, NULL, &mMeshData->animator.animeBuffer, 0, 0);
+	if (shaderShadow->mpShadowConstantBufferAnime.Get() != NULL) {
+		manager->mpImContext->UpdateSubresource(shaderShadow->mpShadowConstantBufferAnime.Get(), 0, NULL, &mMeshData->animator.animeBuffer, 0, 0);
 	}
 
 
 	UINT strides = sizeof(Vertex3D);
 	UINT offsets = 0;
 
-	manager->mpImContext->IASetInputLayout(shader->mpShadowInputLayout.Get());                      //描画用コンテキストに頂点レイアウトを設定
+	manager->mpImContext->IASetInputLayout(shaderShadow->mpShadowInputLayout.Get());                      //描画用コンテキストに頂点レイアウトを設定
 	manager->mpImContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);      //描画用コンテキストのポリゴン描画順をインデックス準拠に設定
 
-	manager->mpImContext->VSSetConstantBuffers(0, 1, shader->mpShadowConstantBufferWorld.GetAddressOf()); //描画用コンテキストに定数バッファを設定
-	manager->mpImContext->VSSetConstantBuffers(1, 1, shader->mpShadowConstantBufferAnime.GetAddressOf()); //描画用コンテキストに定数バッファを設定
+	manager->mpImContext->VSSetConstantBuffers(0, 1, shaderShadow->mpShadowConstantBufferWorld.GetAddressOf()); //描画用コンテキストに定数バッファを設定
+	manager->mpImContext->VSSetConstantBuffers(1, 1, shaderShadow->mpShadowConstantBufferAnime.GetAddressOf()); //描画用コンテキストに定数バッファを設定
 
 	//テクスチャをピクセルシェーダーにセット
 	//manager->mpImContext->PSSetShaderResources(0, 1, DX11TEXTURE_GetShaderResourceViewAddr(mMeshData->pSubmeshArray->pTexture));
@@ -1033,10 +1051,10 @@ void GameObject::ShadowShaderDraw(CameraBuffer cb)
 	//manager->mpImContext->PSSetSamplers(0, 1, manager->mpSampler.GetAddressOf());             //描画用コンテキストにテクスチャサンプラーを設定
 	//manager->mpImContext->PSSetSamplers(1, 1, shader->mpShadowSampler.GetAddressOf());        //描画用コンテキストにテクスチャサンプラーを設定
 
-	manager->mpImContext->VSSetShader(shader->mpShadowVertexShader.Get(), NULL, 0);       //描画用コンテキストに頂点シェーダを設定
-	manager->mpImContext->PSSetShader(shader->mpShadowPixelShader.Get(), nullptr, 0);     // 描画用コンテキストにピクセルシェーダを設定
-	manager->mpImContext->RSSetViewports(1, &shader->mShadowViewport);                    // 描画用コンテキストにビューポートを設定                        
-	manager->mpImContext->RSSetState(shader->mpShadowRasterState.Get());
+	manager->mpImContext->VSSetShader(shaderShadow->mpShadowVertexShader.Get(), NULL, 0);       //描画用コンテキストに頂点シェーダを設定
+	//manager->mpImContext->PSSetShader(shaderShadow->mpShadowPixelShader.Get(), nullptr, 0);     // 描画用コンテキストにピクセルシェーダを設定
+	manager->mpImContext->RSSetViewports(1, &shaderShadow->mShadowViewport);                    // 描画用コンテキストにビューポートを設定                        
+	manager->mpImContext->RSSetState(shaderShadow->mpShadowRasterState.Get());
 
 
 	//現在の頂点レイアウト、頂点バッファ、インデックスバッファ、テクスチャなどの設定を元に、
@@ -1054,20 +1072,20 @@ void GameObject::ShadowShaderDraw(CameraBuffer cb)
 void GameObject::ShadowShaderDrawNomotion(CameraBuffer cb)
 {
 	DirectX11Manager* manager = GetDirectX11Manager();
-	Shader* shaderNoMotion = GetShaderNoMotion();
+	Shader* shaderShadow = GetShaderShadow();
 
 
 	//描画用コンテキストに合成した座標変換行列を登録
-	if (shaderNoMotion->mpShadowConstantBufferWorld != NULL) {
+	if (shaderShadow->mpShadowConstantBufferWorld != NULL) {
 
-		manager->mpImContext->UpdateSubresource(shaderNoMotion->mpShadowConstantBufferWorld.Get(), 0, nullptr, &cb, 0, 0);
+		manager->mpImContext->UpdateSubresource(shaderShadow->mpShadowConstantBufferWorld.Get(), 0, nullptr, &cb, 0, 0);
 	}
 
 	UINT strides = sizeof(Vertex3D);
 	UINT offsets = 0;
-	manager->mpImContext->IASetInputLayout(shaderNoMotion->mpShadowInputLayout.Get());            // 描画用コンテキストに頂点レイアウトを設定
+	manager->mpImContext->IASetInputLayout(shaderShadow->mpShadowInputLayoutNm.Get());            // 描画用コンテキストに頂点レイアウトを設定
 	manager->mpImContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);          // 描画用コンテキストのポリゴン描画順をインデックス準拠に設定
-	manager->mpImContext->VSSetConstantBuffers(0, 1, shaderNoMotion->mpShadowConstantBufferWorld.GetAddressOf()); // 描画用コンテキストに定数バッファを設定
+	manager->mpImContext->VSSetConstantBuffers(0, 1, shaderShadow->mpShadowConstantBufferWorld.GetAddressOf()); // 描画用コンテキストに定数バッファを設定
 
 	//テクスチャをピクセルシェーダーにセット
 	//DX11_GetImmediateContext()->PSSetShaderResources(0, 1, DX11TEXTURE_GetShaderResourceViewAddr(dc.mesh->pSubmeshArray->pTexture));
@@ -1076,10 +1094,10 @@ void GameObject::ShadowShaderDrawNomotion(CameraBuffer cb)
 	//DX11_GetImmediateContext()->PSSetSamplers(0, 1, &g_Dx11Instances->pSampler);                // 描画用コンテキストにテクスチャサンプラーを設定
 	//DX11_GetImmediateContext()->PSSetSamplers(1, 1, &gpSampler_Shadow);                         // 描画用コンテキストにテクスチャサンプラーを設定
 
-	manager->mpImContext->VSSetShader(shaderNoMotion->mpShadowVertexShader.Get(), nullptr, 0);    // 描画用コンテキストに頂点シェーダを設定
-	manager->mpImContext->PSSetShader(shaderNoMotion->mpShadowPixelShader.Get(), nullptr, 0);     // 描画用コンテキストにピクセルシェーダを設定
-	manager->mpImContext->RSSetViewports(1, &shaderNoMotion->mShadowViewport);                    // 描画用コンテキストにビューポートを設定
-	manager->mpImContext->RSSetState(shaderNoMotion->mpShadowRasterState.Get());
+	manager->mpImContext->VSSetShader(shaderShadow->mpShadowVertexShaderNm.Get(), nullptr, 0);    // 描画用コンテキストに頂点シェーダを設定
+	//manager->mpImContext->PSSetShader(shaderShadow->mpShadowPixelShader.Get(), nullptr, 0);     // 描画用コンテキストにピクセルシェーダを設定
+	manager->mpImContext->RSSetViewports(1, &shaderShadow->mShadowViewport);                    // 描画用コンテキストにビューポートを設定
+	manager->mpImContext->RSSetState(shaderShadow->mpShadowRasterState.Get());
 
 
 
@@ -1096,66 +1114,63 @@ void GameObject::ShadowShaderDrawNomotion(CameraBuffer cb)
 
 void GameObject::ShadowDraw()
 {
-	Camera* camera = GetCamera();
-	Light*  light = GetLight();
+	if (mDrawShadow == true) {
+
+		Camera* camera = GetCamera();
+		Light* light = GetLight();
 
 
-	XMMATRIX worldMatrix = XMMatrixTranslation(mPos.x, mPos.y, mPos.z);
+		XMMATRIX worldMatrix = XMMatrixTranslation(mPos.x, mPos.y, mPos.z);
 
-	//ワールド座標の作成
-	//-------------------------------------------
-	XMMATRIX worldScale = XMMatrixScaling(mScl.x, mScl.y, mScl.z);
-	XMMATRIX matrixRotX = XMMatrixRotationX(XMConvertToRadians(mRot.x));
-	XMMATRIX matrixRotY = XMMatrixRotationY(XMConvertToRadians(mRot.y));
-	XMMATRIX matrixRotZ = XMMatrixRotationZ(XMConvertToRadians(mRot.z));
-	worldMatrix = worldScale * mMeshData->baseRot * matrixRotX * matrixRotY * matrixRotZ * worldMatrix;
-	//-------------------------------------------
+		//ワールド座標の作成
+		//-------------------------------------------
+		XMMATRIX worldScale = XMMatrixScaling(mScl.x, mScl.y, mScl.z);
+		XMMATRIX matrixRotX = XMMatrixRotationX(XMConvertToRadians(mRot.x));
+		XMMATRIX matrixRotY = XMMatrixRotationY(XMConvertToRadians(mRot.y));
+		XMMATRIX matrixRotZ = XMMatrixRotationZ(XMConvertToRadians(mRot.z));
+		worldMatrix = worldScale * mMeshData->baseRot * matrixRotX * matrixRotY * matrixRotZ * worldMatrix;
+		//-------------------------------------------
 
-	//ビュー座標の作成
-	//-------------------------------------------
-	// カメラ
-	XMMATRIX viewMatrix_c = camera->GetViewMatrix();
-	// ライト
-	XMMATRIX viewMatrix_l = light->GetViewMatrix();
-	//-------------------------------------------
+		//ビュー座標の作成
+		//-------------------------------------------
+		// カメラ
+		XMMATRIX viewMatrix_c = camera->GetViewMatrix();
+		// ライト
+		XMMATRIX viewMatrix_l = light->GetViewMatrix();
+		//-------------------------------------------
 
-	//プロジェクション座標
-	//-------------------------------------------
-	// カメラ
-	XMMATRIX projMatrix_c = camera->GetProjectionMatrix();
-	// ライト
-	XMMATRIX projMatrix_l = light->GetProjectionMatrix();
-	//-------------------------------------------
+		//プロジェクション座標
+		//-------------------------------------------
+		// カメラ
+		XMMATRIX projMatrix_c = camera->GetProjectionMatrix();
+		// ライト
+		XMMATRIX projMatrix_l = light->GetProjectionMatrix();
+		//-------------------------------------------
 
 
-	//全ての変換行列をコンテキストに設定
-	CameraBuffer cb;  //合成用の変数を宣言
+		//全ての変換行列をコンテキストに設定
+		CameraBuffer cb;  //合成用の変数を宣言
 
-	//XMStoreFloat4x4関数
-	//XMFLOAT4X4を受け渡すためのもの
-	//第1引数:代入先のポインタ　第2引数:受け渡し元
+		//XMStoreFloat4x4関数
+		//XMFLOAT4X4を受け渡すためのもの
+		//第1引数:代入先のポインタ　第2引数:受け渡し元
 
-	//XMMatrixTranspose関数
-	//行列を転置行列にする
+		//XMMatrixTranspose関数
+		//行列を転置行列にする
 
-	XMStoreFloat4x4(&cb.world, XMMatrixTranspose(worldMatrix));     //要はcd.world = XMMatrixTranspose(worldMatrix);
-	XMStoreFloat4x4(&cb.view_c, XMMatrixTranspose(viewMatrix_c));   //要はcd.view = XMMatrixTranspose(viewMatrix);
-	XMStoreFloat4x4(&cb.view_l, XMMatrixTranspose(viewMatrix_l));   //要はcd.view = XMMatrixTranspose(viewMatrix);
-	XMStoreFloat4x4(&cb.projection_c, XMMatrixTranspose(projMatrix_c));   //要はcd.projection = XMMatrixTranspose(projMatrix);
-	XMStoreFloat4x4(&cb.projection_l, XMMatrixTranspose(projMatrix_l));   //要はcd.projection = XMMatrixTranspose(projMatrix);
+		XMStoreFloat4x4(&cb.world, XMMatrixTranspose(worldMatrix));     //要はcd.world = XMMatrixTranspose(worldMatrix);
+		XMStoreFloat4x4(&cb.view_c, XMMatrixTranspose(viewMatrix_c));   //要はcd.view = XMMatrixTranspose(viewMatrix);
+		XMStoreFloat4x4(&cb.view_l, XMMatrixTranspose(viewMatrix_l));   //要はcd.view = XMMatrixTranspose(viewMatrix);
+		XMStoreFloat4x4(&cb.projection_c, XMMatrixTranspose(projMatrix_c));   //要はcd.projection = XMMatrixTranspose(projMatrix);
+		XMStoreFloat4x4(&cb.projection_l, XMMatrixTranspose(projMatrix_l));   //要はcd.projection = XMMatrixTranspose(projMatrix);
 
-	// シェーダー描画（影）
-	if(mMeshData->motion == true) ShadowShaderDraw(cb);
-	else ShadowShaderDrawNomotion(cb);
-}
+		// シェーダー描画（影）
+		/*if (mMeshData->motion == true) ShadowShaderDraw(cb);
+		else ShadowShaderDrawNomotion(cb);*/
 
-void GameObject::ShadowClearScreen()
-{
-	DirectX11Manager* manager = GetDirectX11Manager();
-	Shader* shaderNoMotion = GetShaderNoMotion();
+		ShadowShaderDrawNomotion(cb);
 
-	manager->mpImContext->ClearDepthStencilView(shaderNoMotion->mpShadowDepthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-	manager->mpImContext->OMSetRenderTargets(0, nullptr, shaderNoMotion->mpShadowDepthStencilView.Get()); // 深度ステンシルビューを影用へ
+	}
 }
 
 
@@ -1187,6 +1202,11 @@ void GameObjectInit(void) {
 	// コンポーネント追加
 	//-------------------------------------------
 	// 当たり判定
+	// プレイヤー
+	gpColliderComponent[PLAYER] = new ColliderComponent;
+	gpColliderComponent[PLAYER]->SetOwner(gpGameObject[PLAYER]);
+	gpColliderComponent[PLAYER]->InitSphere(gObjectColliderParameter[PLAYER].sphereRadius);
+
 	// ゴースト
 	gpColliderComponent[ENEMY_01] = new ColliderComponent;
 	gpColliderComponent[ENEMY_01]->SetOwner(gpGameObject[ENEMY_01]);
@@ -1206,7 +1226,7 @@ void GameObjectInit(void) {
 void GameObjectUpdate(void) {
 
 	// ゴースト移動　これはplayerクラスを作ってその中へ
-	XMFLOAT3 pos = gpGameObject[ENEMY_01]->PositionGet();
+	/*XMFLOAT3 pos = gpGameObject[ENEMY_01]->PositionGet();
 	if (GetKeyboardPress(DIK_W)) {
 		pos.z += 1.0f;
 	}
@@ -1220,7 +1240,10 @@ void GameObjectUpdate(void) {
 		pos.x -= 1.0f;
 	}
 
-	gpGameObject[ENEMY_01]->PositionSet(pos.x, pos.y, pos.z);
+	gpGameObject[ENEMY_01]->PositionSet(pos.x, pos.y, pos.z);*/
+
+	// アニメーション
+	gpGameObject[ENEMY_01]->AnimationUpdate(0, 30, 10.0f);
 
 
 	//-------------------------------------------
@@ -1229,6 +1252,13 @@ void GameObjectUpdate(void) {
 	// 当たり判定
 	Map* gridMap = GetGridMap();
 
+	// ゴースト
+	gpColliderComponent[PLAYER]->Update(gpColliderComponent[TREE_01]);
+	gpColliderComponent[PLAYER]->Update(gpColliderComponent[TREASURECHEST]);
+	gridMap->Update(gpColliderComponent[PLAYER], MAP_TREE_01);
+	gpColliderComponent[PLAYER]->UpdateBackup();
+
+	// ゴースト
 	gpColliderComponent[ENEMY_01]->Update(gpColliderComponent[TREE_01]);
 	gpColliderComponent[ENEMY_01]->Update(gpColliderComponent[TREASURECHEST]);
 	gridMap->Update(gpColliderComponent[ENEMY_01], MAP_TREE_01);
@@ -1236,6 +1266,7 @@ void GameObjectUpdate(void) {
 
 }
 
+// 描画（影）
 void GameObjectDrawShadow() {
 
 	//-------------------------------------------
@@ -1291,11 +1322,19 @@ void GameObjectRelease(void) {
 // パラメーター設定
 void GameObjectSetParameter(void) {
 
+	// プレイヤー
+	gpGameObject[PLAYER]->PositionSet(0, 10.0f, 0);
+	gpGameObject[PLAYER]->RotationSet(0, 0, 0);
+	gpGameObject[PLAYER]->ScaleSet(0.5f, 0.5f, 0.5f);
+	//gpGameObject[PLAYER]->ShadowOnOf(false);
+	gObjectColliderParameter[PLAYER].sphereRadius = 20.0f;
+
 	// ゴースト
-	gpGameObject[ENEMY_01]->PositionSet(0, 10.0f, 0);
+	gpGameObject[ENEMY_01]->PositionSet(20.0f, 10.0f, 20.0f);
 	gpGameObject[ENEMY_01]->RotationSet(0, 0, 0);
-	gpGameObject[ENEMY_01]->ScaleSet(0.1f, 0.1f, 0.1f);
-	gObjectColliderParameter[ENEMY_01].sphereRadius = 60.0f;
+	gpGameObject[ENEMY_01]->ScaleSet(0.5f, 0.5f, 0.5f);
+	//gpGameObject[ENEMY_01]->ShadowOnOf(false);
+	gObjectColliderParameter[ENEMY_01].sphereRadius = 20.0f;
 
 	// 木01
 	gpGameObject[TREE_01]->PositionSet(60.0f, 0.0f, 20.0f);
@@ -1312,17 +1351,18 @@ void GameObjectSetParameter(void) {
 	// マップ01
 	gpGameObject[MAP_01]->PositionSet(0, 0, 0);
 	gpGameObject[MAP_01]->RotationSet(0, 0, 0);
-	gpGameObject[MAP_01]->ScaleSet(1.0f, 1.0f, 1.0f);
+	gpGameObject[MAP_01]->ScaleSet(0.6f, 0.6f, 0.6f);
 
 	// 空01
 	gpGameObject[SKY_01]->PositionSet(0, 0, 0);
 	gpGameObject[SKY_01]->RotationSet(0, 0, 0);
-	gpGameObject[SKY_01]->ScaleSet(1.0f, 1.0f, 1.0f);
+	gpGameObject[SKY_01]->ScaleSet(3.0f, 3.0f, 3.0f);
+	gpGameObject[SKY_01]->ShadowOnOf(false);
 
 	// 箱
 	gpGameObject[BOX_01]->PositionSet(-40.0f, 15.0f, -40.0f);
 	gpGameObject[BOX_01]->RotationSet(0, 0, 0);
-	gpGameObject[BOX_01]->ScaleSet(0.1f, 0.1f, 0.1f);
+	gpGameObject[BOX_01]->ScaleSet(0.5f, 0.5f, 0.5f);
 
 }
 

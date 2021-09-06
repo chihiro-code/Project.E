@@ -10,6 +10,8 @@
 #include "ShaderClass.h"
 #include "Map.h"
 #include "XAudio2.h"
+#include "Player.h"
+#include "UI.h"
 
 
 //*************************************
@@ -33,11 +35,17 @@ HRESULT Game_Initialize(void)
 	//ライト
 	LightInit();
 
+	// UI
+	UIInit();
+
 	// ゲームオブジェクト
 	GameObjectInit();
 
 	// グリッドマップ
 	MapInit();
+
+	// プレイヤー
+	PlayerInit();
 
 	// シェーダー
 	ShaderInit();
@@ -60,6 +68,9 @@ void Game_Update(void)
 
 	// カメラ
 	CameraUpdate();
+
+	// プレイヤー
+	PlayerUpdate();
 
 	// ゲームオブジェクト
 	GameObjectUpdate();
@@ -88,7 +99,8 @@ void Game_Render(void)
 	//---------------------------------
 	// シャドウマップ作成
 	//---------------------------------
-	manager->RenderTargetsSetShadowNoMotion();
+	manager->RenderTargetsSetShadow();
+	//manager->RenderTargetsSetShadowNoMotion();
 
 	// ゲームオブジェクト
 	GameObjectDrawShadow();
@@ -107,6 +119,9 @@ void Game_Render(void)
 
 	// グリッドマップ
 	MapDraw();
+
+	// UI
+	UIDraw();
 
 
 	// ↑↑↑　描画処理をここに書く　↑↑↑
@@ -128,6 +143,9 @@ void Game_Release(void)
 
 	// シェーダー
 	ShaderRelease();
+
+	// プレイヤー
+	PlayerRelease();
 
 	// ゲームオブジェクト
 	GameObjectRelease();
